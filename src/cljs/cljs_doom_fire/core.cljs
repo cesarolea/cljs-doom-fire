@@ -43,8 +43,8 @@
              [255 255 255] ;; 35
              ]
    :fire-pixels []
-   :fire-width (get screen-dimension 0)
-   :fire-height (get screen-dimension 1)})
+   :pixel-count (* 4 (* (* (q/display-density) (q/width))
+                        (* (q/display-density) (q/height))))})
 
 (defn- setup
   []
@@ -52,12 +52,16 @@
   (q/frame-rate 27)
   (q/pixel-density (q/display-density))
   (let [state (initial-state)
-        [width height] screen-dimension]
+        canvas (-> js/document (.getElementById "defaultCanvas0"))]
+    (set! (.-height (.-style canvas)) "1280px")
+    (set! (.-height (.-style canvas)) "672px")
     (-> state
         (update-in [:fire-pixels]
                    #(reduce (fn [px i]
-                              (conj px (if (< i (* (dec height) width)) 0 36)))
-                            [] (range (* width height)))))))
+                              (conj px (if (< i (* (* (q/display-density) (q/width))
+                                                   (dec (* (q/display-density) (q/height))))) 0 35)))
+                            [] (range (* (* (q/display-density) (q/width))
+                                         (* (q/display-density) (q/height)))))))))
 
 (defn- draw-fps
   [state]
@@ -69,8 +73,26 @@
     (q/text (Math/round (q/current-frame-rate)) 90 15)
     (q/text (q/target-frame-rate) 91 30)))
 
+(defn- draw-pixels
+  [{:keys [fire-pixels pallete] :as state}]
+  (let [px (q/pixels)
+        px-count (* 4 (* (* (q/display-density) (q/width))
+                         (* (q/display-density) (q/height))))
+        [width height] screen-dimension]
+    (loop [i 0]
+      (when (< i px-count)
+        (let [pixel-value (get fire-pixels (/ i 4))
+              [r g b] (get pallete pixel-value)]
+          (aset px i r)
+          (aset px (+ i 1) g)
+          (aset px (+ i 2) b)
+          (aset px (+ i 3) 255))
+        (recur (+ i 4))))
+    (q/update-pixels)))
+
 (defn- draw
   [{:keys [pallete fire] :as state}]
+  (draw-pixels state)
   (draw-fps state))
 
 (q/defsketch fire
