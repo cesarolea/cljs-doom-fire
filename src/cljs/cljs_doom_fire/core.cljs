@@ -42,17 +42,22 @@
              [239 239 199] ;; 34
              [255 255 255] ;; 35
              ]
-   :fire-height (/ (get screen-dimension 1) 2) ;; maximum fire spread
-   :fire-spread 1                              ;; starts at 1 due to the source of the fire line
-   :fire [(into [] (repeat (get screen-dimension 0) 35))]
-   :pixel-size 1})
+   :fire-pixels []
+   :fire-width (get screen-dimension 0)
+   :fire-height (get screen-dimension 1)})
 
 (defn- setup
   []
   (q/smooth)
-  (q/frame-rate 30)
+  (q/frame-rate 27)
   (q/pixel-density (q/display-density))
-  (initial-state))
+  (let [state (initial-state)
+        [width height] screen-dimension]
+    (-> state
+        (update-in [:fire-pixels]
+                   #(reduce (fn [px i]
+                              (conj px (if (< i (* (dec height) width)) 0 36)))
+                            [] (range (* width height)))))))
 
 (defn- draw-fps
   [state]
@@ -64,77 +69,13 @@
     (q/text (Math/round (q/current-frame-rate)) 90 15)
     (q/text (q/target-frame-rate) 91 30)))
 
-(defn- draw-fire-line
-  "Draws a fire line at the row represented by y-coord"
-  [{:keys [pallete pixel-size] :as state} y fire-pixels im]
-  (loop [idx 0]
-    (when (< idx (get screen-dimension 0))
-      (let [[r g b :as pixel-color] (get pallete (get fire-pixels idx))]
-        (dotimes [n pixel-size]
-          (q/set-pixel im idx (+ y n) (q/color r g b))))
-      (recur (inc idx)))))
-
-(defn- draw-fire-lines
-  "Repeatedly calls draw-fire-line for each fire line, starting at
-  height-2 and ending at fire-height. If a fire line is not present
-  it is drawn as 0"
-  [{:keys [pallete fire fire-height pixel-size] :as state} im]
-  (loop [idx 1 y (- (get screen-dimension 1) 2)]
-    (when (< idx fire-height)
-      (let [fire-pixels (get fire idx)]
-        (when fire-pixels
-          (draw-fire-line state y fire-pixels im)))
-      (recur (inc idx)
-             (- y pixel-size)))))
-
 (defn- draw
   [{:keys [pallete fire] :as state}]
-  (apply q/background (get pallete 0))
-  (draw-fps state)
-  (let [im (apply q/create-image screen-dimension)]
-    ;; draw fire source
-    (draw-fire-line state (dec (get screen-dimension 1)) (get fire 0) im)
-    ;; draw rest of the fire
-    (draw-fire-lines state im)
-    ;; blit
-    (q/update-pixels im)
-    (q/image im 0 0)))
-
-(defn- spread-fire-randomized
-  "Returns a fire row that is a result of subtracting up to 3 heat levels to the given
-  (usually the previous) fire row."
-  [fire-pixel]
-  (let [random-index (bit-and (Math/round (* (Math/random) 3.0)) 3)
-        fire-pixel (- fire-pixel (bit-and random-index 1))]
-    (if (neg? fire-pixel) 0 fire-pixel)))
-
-(defn- fire-scramble
-  "Takes fire array and returns another fire array with the result of applying
-  the given scrambler function to each row, except the first one (the fire source)"
-  [fire height scrambler]
-  (loop [idx 0 scrambled [(get fire 0)]]
-    (if (< idx height)
-      (recur (inc idx)
-             (conj scrambled (into [] (map scrambler (get fire idx)))))
-      scrambled)))
-
-(defn- spread-fire
-  "Continuously generates new fire rows until the fire has spread to fire-height.
-  Once fire-spread has been reached, continues to scramble the fire rows to simulate
-  movement."
-  [{:keys [fire-height fire fire-spread] :as state}]
-  (if (< fire-spread fire-height)
-    (let [fire-pixels (into [] (map spread-fire-randomized (get fire (dec fire-spread))))
-          fire-spread (inc fire-spread)]
-      (-> state
-          (update-in [:fire] #(fire-scramble (conj % fire-pixels) fire-spread spread-fire-randomized))
-          (update-in [:fire-spread] (constantly fire-spread))))
-    (update-in state [:fire] #(fire-scramble % fire-height spread-fire-randomized))))
+  (draw-fps state))
 
 (q/defsketch fire
   :host "fire"
   :draw draw
   :setup setup
-  :update spread-fire
   :middleware [m/fun-mode]
   :size screen-dimension)
