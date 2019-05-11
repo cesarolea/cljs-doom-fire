@@ -49,8 +49,7 @@
      :fire-pixels []
      :pixel-count pixel-count
      :pixel-row pixel-row
-     :pixel-size pixel-size
-     :wind-direction :left}))
+     :pixel-size pixel-size}))
 
 (defn- setup
   []
@@ -60,8 +59,8 @@
   (let [state (initial-state)
         canvas (-> js/document (.getElementById "defaultCanvas0"))
         {:keys [pixel-row pixel-count]} state]
-    (set! (.-height (.-style canvas)) (str (* (q/display-density) (q/width) (:pixel-size state)) "px"))
-    (set! (.-height (.-style canvas)) (str (* (q/display-density) (q/height) (:pixel-size state)) "px"))
+    (set! (.-width (.-style canvas)) (str (* (q/width) (:pixel-size state)) "px"))
+    (set! (.-height (.-style canvas)) (str (* (* (q/width) (:pixel-size state)) 0.64) "px"))
     (-> state
         (update-in [:fire-pixels]
                    #(reduce (fn [px i]
@@ -98,17 +97,7 @@
           (aset px (+ i 4) r)
           (aset px (+ i 5) g)
           (aset px (+ i 6) b)
-          (aset px (+ i 7) 255)
-          ;; pixel 2
-          (aset px (+ i 0 px-row) r)
-          (aset px (+ i 1 px-row) g)
-          (aset px (+ i 2 px-row) b)
-          (aset px (+ i 3 px-row) 255)
-          ;; pixel 3
-          (aset px (+ i 4 px-row) r)
-          (aset px (+ i 5 px-row) g)
-          (aset px (+ i 6 px-row) b)
-          (aset px (+ i 7 px-row) 255))
+          (aset px (+ i 7) 255))
         (recur (+ i (* 4 pixel-size)))))
     (q/update-pixels)))
 
@@ -130,22 +119,20 @@
       :else [random-index (- pixel (bit-and random-index 1))])))
 
 (defn- do-fire
-  [{:keys [fire-pixels pixel-row pixel-count wind-direction] :as state}]
+  [{:keys [fire-pixels pixel-row pixel-count] :as state}]
   (-> state
       (update-in [:fire-pixels]
                  #(loop [i 0 px fire-pixels]
                     (if (< i pixel-count)
                       (let [[random-index pixel] (spread-fire-random state i)
-                            random-index ((condp = wind-direction :left - :right +) i random-index)
-                            random-index (if (and (> random-index 0)
-                                                  (<= random-index pixel-count)) random-index i)]
+                            random-index (Math/abs (- i random-index))]
                         (recur (inc i) (assoc px random-index pixel)))
                       px)))))
 
 (defn- draw
   [state]
   (draw-pixels state)
-  (draw-fps state))
+  #_(draw-fps state))
 
 (q/defsketch fire
   :host "fire"
