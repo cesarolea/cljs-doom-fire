@@ -91,13 +91,21 @@
         (recur (+ i 4))))
     (q/update-pixels)))
 
+(defn- spread-fire-linear
+  [{:keys [fire-pixels pixel-row pixel-count] :as state} src]
+  (let [pixel (get fire-pixels (+ src pixel-row))]
+    (cond
+      (= pixel 0) 0
+      (nil? pixel) (get fire-pixels src)
+      :else (dec pixel))))
+
 (defn- do-fire
   [{:keys [fire-pixels pixel-row pixel-count] :as state}]
   (-> state
       (update-in [:fire-pixels]
                  #(loop [i 0 px []]
                     (if (< i pixel-count)
-                      (recur (inc i) (conj px (get fire-pixels i)))
+                      (recur (inc i) (conj px (spread-fire-linear state i)))
                       px)))))
 
 (defn- draw
