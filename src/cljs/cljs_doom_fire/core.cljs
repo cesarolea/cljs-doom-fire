@@ -49,7 +49,8 @@
      :fire-pixels []
      :pixel-count pixel-count
      :pixel-row pixel-row
-     :pixel-size pixel-size}))
+     :pixel-size pixel-size
+     :wind-direction :left}))
 
 (defn- setup
   []
@@ -119,13 +120,26 @@
       (nil? pixel) (get fire-pixels src)
       :else (dec pixel))))
 
+(defn- spread-fire-random
+  [{:keys [fire-pixels pixel-row pixel-count] :as state} src]
+  (let [pixel (get fire-pixels (+ src pixel-row))
+        random-index (bit-and (Math/round (* (Math/random) 3.0)) 3)]
+    (cond
+      (= pixel 0) [random-index 0]
+      (nil? pixel) [random-index (get fire-pixels src)]
+      :else [random-index (- pixel (bit-and random-index 1))])))
+
 (defn- do-fire
-  [{:keys [fire-pixels pixel-row pixel-count] :as state}]
+  [{:keys [fire-pixels pixel-row pixel-count wind-direction] :as state}]
   (-> state
       (update-in [:fire-pixels]
-                 #(loop [i 0 px []]
+                 #(loop [i 0 px fire-pixels]
                     (if (< i pixel-count)
-                      (recur (inc i) (conj px (spread-fire-linear state i)))
+                      (let [[random-index pixel] (spread-fire-random state i)
+                            random-index ((condp = wind-direction :left - :right +) i random-index)
+                            random-index (if (and (> random-index 0)
+                                                  (<= random-index pixel-count)) random-index i)]
+                        (recur (inc i) (assoc px random-index pixel)))
                       px)))))
 
 (defn- draw
