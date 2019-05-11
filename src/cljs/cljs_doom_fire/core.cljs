@@ -43,8 +43,9 @@
              [255 255 255] ;; 35
              ]
    :fire-pixels []
-   :pixel-count (* 4 (* (* (q/display-density) (q/width))
-                        (* (q/display-density) (q/height))))})
+   :pixel-count (* (* (q/display-density) (q/width))
+                   (* (q/display-density) (q/height)))
+   :pixel-row (* (q/display-density) (q/width))})
 
 (defn- setup
   []
@@ -90,8 +91,17 @@
         (recur (+ i 4))))
     (q/update-pixels)))
 
+(defn- do-fire
+  [{:keys [fire-pixels pixel-row pixel-count] :as state}]
+  (-> state
+      (update-in [:fire-pixels]
+                 #(loop [i 0 px []]
+                    (if (< i pixel-count)
+                      (recur (inc i) (conj px (get fire-pixels i)))
+                      px)))))
+
 (defn- draw
-  [{:keys [pallete fire] :as state}]
+  [state]
   (draw-pixels state)
   (draw-fps state))
 
@@ -99,5 +109,6 @@
   :host "fire"
   :draw draw
   :setup setup
+  :update do-fire
   :middleware [m/fun-mode]
   :size screen-dimension)
