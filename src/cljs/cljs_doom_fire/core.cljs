@@ -59,8 +59,8 @@
   (let [state (initial-state)
         canvas (-> js/document (.getElementById "defaultCanvas0"))
         {:keys [pixel-row pixel-count]} state]
-    (set! (.-width (.-style canvas)) (str (* (q/width) (:pixel-size state)) "px"))
-    (set! (.-height (.-style canvas)) (str (* (* (q/width) (:pixel-size state)) 0.64) "px"))
+    (set! (.-width (.-style canvas)) (str (* (q/width) (q/display-density)) "px"))
+    (set! (.-height (.-style canvas)) (str (* (* (q/width) (q/display-density)) 0.64) "px"))
     (-> state
         (update-in [:fire-pixels]
                    #(reduce (fn [px i]
@@ -86,18 +86,20 @@
         [width height] screen-dimension]
     (loop [i 0]
       (when (< i px-count)
-        (let [pixel-value (get fire-pixels (/ i (* 4 (* (q/display-density) pixel-size))))
+        (let [pixel-value (get fire-pixels (/ i (* 4 (* 2 pixel-size))))
               [r g b] (get pallete pixel-value)]
           ;; pixel 0
           (aset px (+ i 0) r)
           (aset px (+ i 1) g)
           (aset px (+ i 2) b)
           (aset px (+ i 3) 255)
-          ;; pixel 1
-          (aset px (+ i 4) r)
-          (aset px (+ i 5) g)
-          (aset px (+ i 6) b)
-          (aset px (+ i 7) 255))
+
+          (when (= pixel-size 2)
+            ;; pixel 1
+            (aset px (+ i 4) r)
+            (aset px (+ i 5) g)
+            (aset px (+ i 6) b)
+            (aset px (+ i 7) 255)))
         (recur (+ i (* 4 pixel-size)))))
     (q/update-pixels)))
 
