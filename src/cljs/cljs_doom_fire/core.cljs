@@ -46,7 +46,8 @@
                ]
      :fire-pixels []
      :pixel-count pixel-count
-     :pixel-row pixel-row}))
+     :pixel-row pixel-row
+     :pressed-keys #{}}))
 
 (defn- setup
   []
@@ -112,6 +113,25 @@
                         (recur (inc i) (assoc px random-index pixel)))
                       px)))))
 
+(defn toggle-fire
+  [{:keys [fire-pixels pressed-keys pixel-row pixel-count] :as state}]
+  (update-in state [:fire-pixels]
+             (fn [fp]
+               (reduce (fn [px i] (conj px (if (< i (- pixel-count pixel-row))
+                                             (get fp i)
+                                             (if (contains? pressed-keys "space") 0 35))))
+                       [] (range pixel-count)))))
+
+(defn key-pressed
+  [{:keys [pressed-keys] :as state} {:keys [key key-code] :as event}]
+  (let [pressed-keys (into #{} (conj pressed-keys (.toLowerCase (name key))))]
+    (update-in state [:pressed-keys] (constantly pressed-keys))))
+
+(defn key-released
+  [{:keys [pressed-keys] :as state} {:keys [key key-code] :as event}]
+  (let [pressed-keys (into #{} (disj pressed-keys (.toLowerCase (name key))))]
+    (update-in state [:pressed-keys] (constantly pressed-keys))))
+
 (defn- draw
   [state]
   (draw-pixels state)
@@ -121,6 +141,8 @@
   :host "fire"
   :draw draw
   :setup setup
-  :update do-fire
+  :update #(-> % toggle-fire do-fire)
+  :key-pressed key-pressed
+  :key-released key-released
   :middleware [m/fun-mode]
   :size screen-dimension)
