@@ -2,13 +2,11 @@
   (:require [quil.core :as q :include-macros true]
             [quil.middleware :as m]))
 
-(def screen-dimension [320 168])
+(def screen-dimension [160 84])
 
 (defn- initial-state []
-  (let [pixel-size 2
-        pixel-row (/ (* (q/display-density) (q/width)) pixel-size)
-        pixel-count (* pixel-row
-                       (/ (* (q/display-density) (q/height)) pixel-size))]
+  (let [pixel-row (* (q/display-density) (q/width))
+        pixel-count (* pixel-row (* (q/display-density) (q/height)))]
     {:pallete [[  7   7   7] ;; 0
                [ 31   7   7] ;; 1
                [ 47  15   7] ;; 2
@@ -48,8 +46,7 @@
                ]
      :fire-pixels []
      :pixel-count pixel-count
-     :pixel-row pixel-row
-     :pixel-size pixel-size}))
+     :pixel-row pixel-row}))
 
 (defn- setup
   []
@@ -59,8 +56,8 @@
   (let [state (initial-state)
         canvas (-> js/document (.getElementById "defaultCanvas0"))
         {:keys [pixel-row pixel-count]} state]
-    (set! (.-width (.-style canvas)) (str (* (q/width) (q/display-density)) "px"))
-    (set! (.-height (.-style canvas)) (str (* (* (q/width) (q/display-density)) 0.64) "px"))
+    (set! (.-width (.-style canvas)) (str (* (q/width) (/ 4 (q/display-density))) "px"))
+    (set! (.-height (.-style canvas)) (str (* (* (q/width) (/ 4 (q/display-density))) 0.64) "px"))
     (-> state
         (update-in [:fire-pixels]
                    #(reduce (fn [px i]
@@ -78,7 +75,7 @@
     (q/text (q/target-frame-rate) 91 30)))
 
 (defn- draw-pixels
-  [{:keys [fire-pixels pallete pixel-size] :as state}]
+  [{:keys [fire-pixels pallete] :as state}]
   (let [px (q/pixels)  ;; screen pixels
         px-count (* 4 (* (* (q/display-density) (q/width))
                          (* (q/display-density) (q/height))))
@@ -86,21 +83,13 @@
         [width height] screen-dimension]
     (loop [i 0]
       (when (< i px-count)
-        (let [pixel-value (get fire-pixels (/ i (* 4 (* 2 pixel-size))))
+        (let [pixel-value (get fire-pixels (/ i 4))
               [r g b] (get pallete pixel-value)]
-          ;; pixel 0
           (aset px (+ i 0) r)
           (aset px (+ i 1) g)
           (aset px (+ i 2) b)
-          (aset px (+ i 3) 255)
-
-          (when (= pixel-size 2)
-            ;; pixel 1
-            (aset px (+ i 4) r)
-            (aset px (+ i 5) g)
-            (aset px (+ i 6) b)
-            (aset px (+ i 7) 255)))
-        (recur (+ i (* 4 pixel-size)))))
+          (aset px (+ i 3) 255))
+        (recur (+ i 4))))
     (q/update-pixels)))
 
 (defn- spread-fire-random
@@ -126,7 +115,7 @@
 (defn- draw
   [state]
   (draw-pixels state)
-  #_(draw-fps state))
+  (draw-fps state))
 
 (q/defsketch fire
   :host "fire"
