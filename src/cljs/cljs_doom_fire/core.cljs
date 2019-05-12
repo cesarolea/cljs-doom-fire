@@ -103,14 +103,6 @@
         (recur (+ i (* 4 pixel-size)))))
     (q/update-pixels)))
 
-(defn- spread-fire-linear
-  [{:keys [fire-pixels pixel-row pixel-count] :as state} src]
-  (let [pixel (get fire-pixels (+ src pixel-row))]
-    (cond
-      (= pixel 0) 0
-      (nil? pixel) (get fire-pixels src)
-      :else (dec pixel))))
-
 (defn- spread-fire-random
   [{:keys [fire-pixels pixel-row pixel-count] :as state} src]
   (let [pixel (get fire-pixels (+ src pixel-row))
@@ -118,7 +110,7 @@
     (cond
       (= pixel 0) [random-index 0]
       (nil? pixel) [random-index (get fire-pixels src)]
-      :else [random-index (- pixel (bit-and random-index 1))])))
+      :else [(bit-and random-index 1) (- pixel (bit-and random-index 1))])))
 
 (defn- do-fire
   [{:keys [fire-pixels pixel-row pixel-count] :as state}]
