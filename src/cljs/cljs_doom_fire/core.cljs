@@ -67,12 +67,12 @@
 (defn- draw-fps
   [state]
   (q/with-fill [255 184 108]
-    (q/text "Current FPS: " 10 15)
-    (q/text "  Target FPS: " 10 30))
+    (q/text "Current FPS: " 10 10)
+    (q/text "  Target FPS: " 10 20))
 
   (q/with-fill [80 250 123]
-    (q/text (Math/round (q/current-frame-rate)) 90 15)
-    (q/text (q/target-frame-rate) 91 30)))
+    (q/text (Math/round (q/current-frame-rate)) 90 10)
+    (q/text (q/target-frame-rate) 91 20)))
 
 (defn- draw-pixels
   [{:keys [fire-pixels pallete] :as state}]
