@@ -56,8 +56,8 @@
   (let [state (initial-state)
         canvas (-> js/document (.getElementById "defaultCanvas0"))
         {:keys [pixel-row pixel-count]} state]
-    (set! (.-width (.-style canvas)) (str (* (q/width) (/ 4 (q/display-density))) "px"))
-    (set! (.-height (.-style canvas)) (str (* (* (q/width) (/ 4 (q/display-density))) 0.64) "px"))
+    (set! (.-width (.-style canvas)) (str (* (q/width) 4) "px"))
+    (set! (.-height (.-style canvas)) (str (* (* (q/width) 4) 0.64) "px"))
     (-> state
         (update-in [:fire-pixels]
                    #(reduce (fn [px i]
