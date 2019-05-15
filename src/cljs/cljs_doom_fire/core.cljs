@@ -2,7 +2,8 @@
   (:require [quil.core :as q :include-macros true]
             [quil.middleware :as m]))
 
-(def screen-dimension [160 84])
+(def pixel-ratio (.-devicePixelRatio js/window))
+(def screen-dimension [(/ 160 pixel-ratio) (/ 84 pixel-ratio)])
 
 (defn- initial-state []
   (let [pixel-row (* (q/display-density) (q/width))
@@ -57,8 +58,8 @@
   (let [state (initial-state)
         canvas (-> js/document (.getElementById "defaultCanvas0"))
         {:keys [pixel-row pixel-count]} state]
-    (set! (.-width (.-style canvas)) (str (* (q/width) 4) "px"))
-    (set! (.-height (.-style canvas)) (str (* (* (q/width) 4) 0.64) "px"))
+    (set! (.-width (.-style canvas)) (str (* (q/width) (* 4 pixel-ratio)) "px"))
+    (set! (.-height (.-style canvas)) (str (* (* (q/width) (* 4 pixel-ratio)) 0.64) "px"))
     (-> state
         (update-in [:fire-pixels]
                    #(reduce (fn [px i]
@@ -94,7 +95,7 @@
     (q/update-pixels)))
 
 (defn- spread-fire-random
-  [{:keys [fire-pixels pixel-row pixel-count] :as state} src]
+  [{:keys [fire-pixels pixel-row] :as state} src]
   (let [pixel (get fire-pixels (+ src pixel-row))
         random-index (bit-and (Math/round (* (Math/random) 3.0)) 3)]
     (cond
@@ -103,7 +104,7 @@
       :else [(bit-and random-index 1) (- pixel (bit-and random-index 1))])))
 
 (defn- do-fire
-  [{:keys [fire-pixels pixel-row pixel-count] :as state}]
+  [{:keys [fire-pixels pixel-count] :as state}]
   (-> state
       (update-in [:fire-pixels]
                  #(loop [i 0 px fire-pixels]
@@ -135,7 +136,7 @@
 (defn- draw
   [state]
   (draw-pixels state)
-  (draw-fps state))
+  #_(draw-fps state))
 
 (q/defsketch fire
   :host "fire"
