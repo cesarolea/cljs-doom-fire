@@ -60,11 +60,10 @@
         {:keys [pixel-row pixel-count]} state]
     (set! (.-width (.-style canvas)) (str (* (q/width) (* 4 pixel-ratio)) "px"))
     (set! (.-height (.-style canvas)) (str (* (* (q/width) (* 4 pixel-ratio)) 0.64) "px"))
-    (-> state
-        (update-in [:fire-pixels]
-                   #(reduce (fn [px i]
-                              (conj px (if (< i (- pixel-count pixel-row)) 0 35)))
-                            [] (range pixel-count))))))
+    (update-in state [:fire-pixels]
+               #(reduce (fn [px i]
+                          (conj px (if (< i (- pixel-count pixel-row)) 0 35)))
+                        [] (range pixel-count)))))
 
 (defn- draw-fps
   [state]
@@ -105,23 +104,20 @@
 
 (defn- do-fire
   [{:keys [fire-pixels pixel-count] :as state}]
-  (-> state
-      (update-in [:fire-pixels]
-                 #(loop [i 0 px fire-pixels]
-                    (if (< i pixel-count)
-                      (let [[random-index pixel] (spread-fire-random state i)
-                            random-index (Math/abs (- i random-index))]
-                        (recur (inc i) (assoc px random-index pixel)))
-                      px)))))
+  (update-in state [:fire-pixels]
+             #(reduce (fn [px i]
+                        (let [[random-index pixel] (spread-fire-random state i)
+                              random-index (Math/abs (- i random-index))]
+                          (assoc px random-index pixel)))
+                      % (range pixel-count))))
 
 (defn toggle-fire
   [{:keys [fire-pixels pressed-keys pixel-row pixel-count] :as state}]
   (update-in state [:fire-pixels]
-             (fn [fp]
-               (reduce (fn [px i] (conj px (if (< i (- pixel-count pixel-row))
-                                             (get fp i)
-                                             (if (contains? pressed-keys "space") 0 35))))
-                       [] (range pixel-count)))))
+             #(reduce (fn [px i] (conj px (if (< i (- pixel-count pixel-row))
+                                            (get % i)
+                                            (if (contains? pressed-keys "space") 0 35))))
+                      [] (range pixel-count))))
 
 (defn key-pressed
   [{:keys [pressed-keys] :as state} {:keys [key key-code] :as event}]
