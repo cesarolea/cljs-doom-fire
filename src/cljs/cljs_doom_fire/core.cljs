@@ -116,7 +116,7 @@
   (update-in state [:fire-pixels]
              #(reduce (fn [px i] (conj px (if (< i (- pixel-count pixel-row))
                                             (get % i)
-                                            (if (contains? pressed-keys "space") 0 35))))
+                                            (if (contains? pressed-keys "shift") 0 35))))
                       [] (range pixel-count))))
 
 (defn key-pressed
